@@ -1,8 +1,14 @@
-function [outlierframes] = scrubMotionFrames(i, j, nscans)
+function [outlierframes] = scrubMotionFrames(i, j, nscans, sub_direct)
     % Motion scrubbing - flag frames with high motion & 1 frame before + after
     subject = strcat('SUB', num2str(i));
+    disp(strcat('flagging high-motion frames for:', subject))
     %load motion outlier files
-    outliers=load(strcat('/home/emo4002/colossus_shared3/pons_sfmodelling/stroke_pts/',subject,'/func/S',num2str(j),'/art_regression_outliers_aufunc1.mat')); %row=frames. one column for each flagged frame.
+    if i > 23
+        outliers=load(strcat(sub_direct,subject,'/func/art_regression_outliers_aufunc1.mat')); %row=frames. one column for each flagged frame.
+    else
+        outliers=load(strcat(sub_direct,subject,'/func/S',num2str(j),'/art_regression_outliers_aufunc1.mat')); %row=frames. one column for each flagged frame.
+    end
+    
     outlierframes=outliers.R;
 
     motionframes=find(sum(outlierframes,2)); %returns frames which are high motion 
