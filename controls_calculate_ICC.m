@@ -1,5 +1,6 @@
 %Calcualte ICC across control subjects & save mean & std dev for each
 %voxel.
+% change test. 
 clear all;
 
 if(isempty(which('save_avw')))
