@@ -1,8 +1,5 @@
-function [outlierframes] = scrubMotionFrames(subject, session, numscans)
+function [outlierframes] = scrubMotionFrames(i, j, nscans)
     % Motion scrubbing - flag frames with high motion & 1 frame before + after
-    % high motion frame.
-    subject = i;
-    session = j;
     subject = strcat('SUB', num2str(i));
     %load motion outlier files
     outliers=load(strcat('/home/emo4002/colossus_shared3/pons_sfmodelling/stroke_pts/',subject,'/func/S',num2str(j),'/art_regression_outliers_aufunc1.mat')); %row=frames. one column for each flagged frame.
@@ -14,13 +11,13 @@ function [outlierframes] = scrubMotionFrames(subject, session, numscans)
     outlierframes=zeros(size(outlierframes,1), size(motionframes,1)); %outlierframes = empty matrix to be populated below.
 
     %remove first 5 frames of each scan.
-    if numscans(j,i)==4
+    if nscans(j,i)==4
         motionframes=[motionframes;1;2;3;4;5;125;126;127;128;129;249;250;251;252;253;373;374;375;378;379];
     end
-    if numscans(j,i)==3
+    if nscans(j,i)==3
         motionframes=[motionframes;1;2;3;4;5;125;126;127;128;129;249;250;251;252;253];
     end
-    sort(unique(motionframes))
+    sort(unique(motionframes));
 
     %set cells to 1 if they are outliers (one outlier per row/column) (adds frame after ART-identified frame - the one before has already been set to 1, by ART)
     for l=1:size(motionframes,1)

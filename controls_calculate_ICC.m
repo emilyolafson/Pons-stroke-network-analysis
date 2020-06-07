@@ -19,14 +19,14 @@ for i=24:47 %loop over subjects
     %load Harvard-Oxford cortical atlas.
     % https://neurovault.org/collections/262/
     
-    % load GM mask for global signal regression.
-    GM=read_avw('~/Documents/Thesis/colossus_syncs/c1referenceT1.nii'); 
+     % load GM mask for global signal regression.
+    GM=read_avw('/home/emo4002/colossus_shared3/c1referenceT1.nii'); 
     GM_reshape=reshape(GM, [902629 1]);
-    GM_reshape(GM_reshape > 0.25) = 1; %threshold GM mask 
-    
+    GM_reshape(GM_reshape > 0.25) = 1; %threshold GM mask
+    GM_reshape(GM_reshape <=0.25) = 0;
     % get mask for regional analyses
     mask=getMask('cortex');
-
+    
     for j=1:nsess(i) %loop over sessions
         cat_func=[]; %empty functional connectivity
         cat_outliers=[]; %empty outliers matrix
@@ -50,14 +50,14 @@ for i=24:47 %loop over subjects
         disp(strcat('saving ICC for ', subject, ' session ', num2str(j)))
         
         %save voxelwise measure of ICC.
-        ICC_GSR_cat{i}{j}{k}=intrinsic_connectivity_contrast(ts_clean_GSR); %save timeseries into larger cell matrix
+        ICC_GSR_cat_controls{i}{j}{k}=intrinsic_connectivity_contrast(ts_clean_GSR); %save timeseries into larger cell matrix
     
         % Make 3D image (for visualization)
         p=1; %counter
         for z=1:size(GM,1) %starts with the gray matter mask(which has all voxels in the 3d volume.)
             % makes gray matter voxels equal to their ICC value.
             if GM(z)==1
-                ICC_GSR(z)=ICC_GSR_cat{i}{j}{k}(p); 
+                ICC_GSR(z)=ICC_GSR_cat_controls{i}{j}{k}(p); 
                 p=p+1;
             else
                 ICC_GSR(z) =0;
@@ -68,35 +68,27 @@ for i=24:47 %loop over subjects
     end
 end
 
-save('/home/emo4002/colossus_shared3/pons_sfmodelling/results/ICC/ICC_GSR_23subjects.mat','ICC_GSR_cat')
+save('/home/emo4002/colossus_shared3/pons_sfmodelling/results/ICC/ICC_GSR_controlsubjects.mat','ICC_GSR_cat_controls')
 
 %% Calculate mean and standard deviation of ICC across control subjects - from concatenated scans.
 
-load('/home/emo4002/colossus_shared3/pons_sfmodelling/ICC_final_cat_controls.mat', 'ICC_final_cat');
-load('/home/emo4002/colossus_shared3/pons_sfmodelling/ICC_GSR_final_cat_controls.mat', 'ICC_GSR_final_cat');
+load('/home/emo4002/colossus_shared3/pons_sfmodelling/results/ICC/ICC_GSR_controlsubjects.mat', 'ICC_GSR_cat_controls');
 cat=[];
 cat_GSR=[];
-for i=19:44
-    
-    if i==36
-        continue
-    end
-    if i==39
-        continue
-    end
+for i=24:47
     subject = strcat('SUB', num2str(i));
     graymask{i} = read_avw(strcat('/home/emo4002/colossus_shared3/CTL_prep/cleanData/',subject,'/avg/wc1c',subject,'_Savg_GM_binarized.nii.gz'));
     graymask{i}=reshape(graymask{i},[],1); %flattened 1D vector with a 1/0 for each voxel
 
     disp(num2str(i))
     ICC_cat = reshape(ICC_final_cat{i}{1}{2}, [], size(ICC_final_cat{i}{1}{2}, 4)); %load so that you have <voxels>
-    ICC_GSR_cat = reshape(ICC_GSR_final_cat{i}{1}{2}, [], size(ICC_GSR_final_cat{i}{1}{2}, 4));
+    ICC_GSR_cat_controls = reshape(ICC_GSR_final_cat{i}{1}{2}, [], size(ICC_GSR_final_cat{i}{1}{2}, 4));
     
     ICC_cat(ICC_cat(graymask{i}==1)==0)=NaN; %set values inside the gray mask that have an ICC of zero to be "NaN". This ideally eliminates any problems with the masks not fully lining up between subjects
-    ICC_GSR_cat(ICC_GSR_cat(graymask{i}==1)==0)=NaN;
+    ICC_GSR_cat_controls(ICC_GSR_cat_controls(graymask{i}==1)==0)=NaN;
 
     cat=[cat; ICC_cat'];
-    cat_GSR=[cat_GSR;ICC_GSR_cat']; %the img is stored in the 2nd cell. add each new subj as a row.
+    cat_GSR=[cat_GSR;ICC_GSR_cat_controls']; %the img is stored in the 2nd cell. add each new subj as a row.
 end
 
 ctrl_cat_GSR_mean = mean(cat_GSR, 'omitnan');
