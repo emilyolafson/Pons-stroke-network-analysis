@@ -1,9 +1,11 @@
 function [outlierframes] = scrubMotionFrames(i, j, nscans, sub_direct)
-    % Motion scrubbing - flag frames with high motion & 1 frame before + after
+    % scrubMotionFrames: Flag frames with high motion & 1 frame before + after
+
     subject = strcat('SUB', num2str(i));
-    disp(strcat('flagging high-motion frames for:', subject))
+    disp(strcat('Flagging high-motion frames for:', subject))
+
     %load motion outlier files
-    if i > 23
+    if i > 23 %controls don't have session folders
         outliers=load(strcat(sub_direct,subject,'/func/art_regression_outliers_aufunc1.mat')); %row=frames. one column for each flagged frame.
     else
         outliers=load(strcat(sub_direct,subject,'/func/S',num2str(j),'/art_regression_outliers_aufunc1.mat')); %row=frames. one column for each flagged frame.

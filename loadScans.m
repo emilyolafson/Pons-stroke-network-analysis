@@ -1,11 +1,12 @@
 function cat_func = loadScans(i, j, nscans, sub_direct)
-% Save scans from a single session concatenated together across time.
+  % loadScans: loads denoised fMRI scans from a single session concatenated together across time.
     cat_func=[];
    
     subject = strcat('SUB', num2str(i));
+    disp(strcat('Loading scans for subejct:', num2str(i), ', session:', num2str(j)));
+
     for k=1:nscans(j,i) %loop over scans within sessions
-        disp(strcat('loading functional scans for:', subject, ', session:', num2str(j), ',scan:', num2str(k)))
-        if i > 23 %controls don't have session directories
+      if i > 23 %controls don't have session directories
           func=read_avw(strcat(sub_direct,subject,'/func/denoise_swaufunc',num2str(k),'.nii')); %91x109x91
         else
           func=read_avw(strcat(sub_direct,subject,'/func/S',num2str(j),'/denoise_swaufunc',num2str(k),'.nii')); %91x109x91
