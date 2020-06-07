@@ -1,9 +1,9 @@
 function mask = getMask(region)
-    % getMask: 
-    % region: cortical, cortex, cerebellum, brainstem
+% OPTIONS
+% region: cortical, cortex, cerebellum, brainstem
     if strcmp(region,'cortical')
-        cort_atlas = read_avw(strcat(fsldir, 'data/atlases/HarvardOxford/HarvardOxford-cort-maxprob-thr0-2mm.nii.gz')); %copied from /conn/utils/surf/c1referenceT1.nii. 91x109x91
-        cort_struct = parseXML(strcat(fsldir, 'data/atlases/HarvardOxford-Cortical.xml'));
+        cort_atlas = read_avw(strcat('/usr/share/fsl/5.0/data/atlases/HarvardOxford/HarvardOxford-cort-maxprob-thr0-2mm.nii.gz')); %copied from /conn/utils/surf/c1referenceT1.nii. 91x109x91
+        cort_struct = parseXML(strcat('/usr/share/fsl/5.0/data/atlases/HarvardOxford-Cortical.xml'));
         idx = 1;
         for i = 2:2:96
             cort_region{idx} = cort_struct.Children(4).Children(i).Children.Data;
@@ -16,8 +16,8 @@ function mask = getMask(region)
     end
 
     if (strcmp(region, 'cortex') | strcmp(region,'brainstem'))
-        subcort_atlas = read_avw(strcat(fsldir, 'data/atlases/HarvardOxford/HarvardOxford-sub-maxprob-thr25-2mm.nii.gz')); %copied from /conn/utils/surf/c1referenceT1.nii. 91x109x91
-        subcort_struct = parseXML(strcat(fsldir, 'data/atlases/HarvardOxford-Subcortical.xml'));
+        subcort_atlas = read_avw(strcat('/usr/share/fsl/5.0/data/atlases/HarvardOxford/HarvardOxford-sub-maxprob-thr25-2mm.nii.gz')); %copied from /conn/utils/surf/c1referenceT1.nii. 91x109x91
+        subcort_struct = parseXML(strcat('/usr/share/fsl/5.0/data/atlases/HarvardOxford-Subcortical.xml'));
         idx = 1;
         for i = 2:2:42
             subcort_region{idx} = subcort_struct.Children(4).Children(i).Children.Data;
@@ -36,8 +36,8 @@ function mask = getMask(region)
     end
 
     if strcmp(region,'cerebellum')
-        cere_atlas = read_avw(strcat(fsldir, 'data/atlases/Cerebellum/Cerebellum-MNIfnirt-prob-2mm.nii.gz')); %copied from /conn/utils/surf/c1referenceT1.nii. 91x109x91
-        cere_struct = parseXML(strcat(fsldir, 'data/atlases/Cerebellum_MNIfnirt.xml'));
+        cere_atlas = read_avw(strcat('/usr/share/fsl/5.0/data/atlases/Cerebellum/Cerebellum-MNIfnirt-prob-2mm.nii.gz')); %copied from /conn/utils/surf/c1referenceT1.nii. 91x109x91
+        cere_struct = parseXML(strcat('/usr/share/fsl/5.0/data/atlases/Cerebellum_MNIfnirt.xml'));
         idx = 1;
         for i = 2:2:56
             cere_region{idx} = cere_struct.Children(4).Children(i).Children.Data;
