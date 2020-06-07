@@ -25,7 +25,9 @@ controlsCalculateICC(ones(1, 47)+1;, nsess, studydir, resultsdir, 'control_subs/
 calculateZScores(nsess, studydir, resultsdir);
 
 figuresdir = 'results/figures/';
-makeFigures(studydir, figuresdir, figs);
+disconnectivitydir = 'processing/get_numerator/numerator_output/';
+figs = [1, 2, 4];
+makeFigures(studydir, figuresdir, disconnectivitydir, figs);
 
 
 %% Figure 1 - Boxplots of ICC voxels connected vs unconnected to lesion area - concatenated scans, Z-SCORED!

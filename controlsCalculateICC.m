@@ -21,7 +21,7 @@ function [] = controlsCalculateICC(nscans, nsess, studydir, resultsdir, controld
     clear fsldir fsldirmpath;
 
     %% Global signal regression and ICC calculation for concatenated scans
-    for i=24:47 %loop over subjects   
+    for i=24:47 %loop over controls subjects   
     
         % load GM mask for global signal regression.
         GM=read_avw(strcat(studydir, '/c1referenceT1.nii'); 

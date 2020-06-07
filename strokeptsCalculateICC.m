@@ -13,7 +13,7 @@ function strokeptsCalcualteICC(nscans, nsess, studydir, resultsdir, strokedir)
    
     clear all;
     %% Global signal regression and ICC calculation for concatenated scans
-    for i=1:23 %loop over subjects 
+    for i=1:size(nscans, 2) %loop over subjects 
 
         GM=read_avw('/home/emo4002/colossus_shared3/c1referenceT1.nii'); 
         GM_reshape=reshape(GM, [902629 1]);
