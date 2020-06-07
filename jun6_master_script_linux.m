@@ -2,50 +2,61 @@ clear all;
 
 addpath([getenv('FSLDIR') '/etc/matlab']);
 
-setenv( 'FSLDIR', '/usr/share/fsl/5.0/');
+setenv( 'FSLDIR', '/usr/share/fsl/5.0');
 fsldir = getenv('FSLDIR');
 fsldirmpath = sprintf('%s/etc/matlab',fsldir);
 path(path, fsldirmpath);
-clear fsldirmpath;
+clear fsldir fsldirmpath;
 
 % number of scans per session. row = sesssion, column = subject
 numscans1_11=[4 3 3 3 3 3 3 3 3 3 3;4 3 3 3 3 3 3 4 3 3 3;3 3 3 3 3 3 3 3 3 3 3;4 4 3 3 3 3 3 3 3 3 3 ; 3 3 3 3 3 0 3 3 3 3 3];
-numscans12_23=[3 3 3 3 3 2 2 2 2 2 2 2; 3 3 3 4 3 2 2 2 2 2 2 2 ;3 3 3 3 3 2 2 1 0 2 2 2;0 3 3 3 3 2 2 2 0 2 2 2;0 3 4 3 3 2 2 2 0 2 2 2];
+numscans12_23=[3 3 3 3 3 2 2 2 2 2 2 2; 3 3 3 4 3 2 2 2 2 2 2 2 ;3 3 3 3 3 2 2 2 0 2 2 2;0 3 3 3 3 2 2 2 0 2 2 2;0 3 4 3 3 2 2 2 0 2 2 2];
 nscans = [numscans1_11, numscans12_23];
 
 % number of sessions per subject. 
 nsess=[5;5;5;5;5;4;5;5;5;5;5;3;5;5;5;5;5;5;5;2;5;5;5];
 
-studydir = '/home/emo4002/colossus_shared3/pons_sfmodelling/'
-resultsdir = 'results/ICC/'
+sub_direct='/home/emo4002/colossus_shared3/pons_sfmodelling/stroke_pts/';
+%% calculate Z-scores of patient ICC values.
+clear
+load('/home/emo4002/colossus_shared3/pons_sfmodelling/results/ICC/ICC_GSR_23subjects.mat','ICC_GSR_cat')
+load('/home/emo4002/colossus_shared3/pons_sfmodelling/results/ICC/crtl_cat_GSR_mean.mat', 'ctrl_cat_GSR_mean')
+load('/home/emo4002/colossus_shared3/pons_sfmodelling/results/ICC/crtl_cat_GSR_stdev.mat', 'ctrl_cat_GSR_stdev')
 
-strokeptsCalculateICC(nscans, nsess, studydir, resultsdir, 'stroke_pts/')
-controlsCalculateICC(ones(1, 47)+1;, nsess, studydir, resultsdir, 'control_subs/');
+SUBzscore=[];
+for i=1:23
+    for j=1:nsess(i)
+        k=nscans(j,i);
+       
+        %load mean and stddev of controls
+        SUBi_ctrlmean = ctrl_cat_GSR_mean; %voxels that are in the GM mask of subject i. <1 x 115114 voxels>
+        SUBi_ctrlstdev = ctrl_cat_GSR_stdev;
+        
+        %subtract control mean from subject's ICC,
+        SUBzscore{i,j}=(ICC_GSR_cat{i}-SUBi_ctrlmean)./SUBi_ctrlstdev %z-score calculation: (X-mean)/sd of ctls
+        
+       % for n = 1:size(SUBzscore{i,j},2)
+           % if (isinf(SUBzscore{i,j}(n)))|| (isinf(-SUBzscore{i,j}(n)))
+           %     SUBzscore{i,j}(n)=NaN;
+        %    end
+       % end
+    end
+end
 
-calculateZScores(nsess, studydir, resultsdir);
-
-figuresdir = 'results/figures/';
-makeFigures(studydir, figuresdir, figs);
-
-
-%% Figure 1 - Boxplots of ICC voxels connected vs unconnected to lesion area - concatenated scans, Z-SCORED!
+%% Boxplots of ICC voxels connected vs unconnected to lesion area - concatenated scans, Z-SCORED!
 traject = figure(1)
 set(traject, 'Position', [0 0 1400 1200])
 traject
-
 p =1;
 for i=1:3
     subject = strcat('SUB',num2str(i));
     %load gray matter masks
-    GM=read_avw('/home/emo4002/colossus_shared3/c1referenceT1.nii'); 
-    GM_reshape=reshape(GM, [902629 1]);
-    GM_reshape(GM_reshape > 0.25) = 1; %threshold GM mask
-    GM_reshape(GM_reshape <=0.25) = 0;
+    graymask{i} = read_avw('/home/emo4002/colossus_shared3/c1referenceT1.nii');
+    graymask{i}=reshape(graymask{i},[],1); %flattened 1D vector with a 1/0 for each voxel
+    graymask{i}=graymask{i}>0.5 %load lesion tracts
+    lesion_dc{i} = read_avw(strcat('/home/emo4002/colossus_shared3/pons_sfmodelling/',subject,'/lesionTract/HCP_MGH_32fold/wc_',subject,'_lesionTract.nii.gz'));
+    lesion_dc{i}=reshape(lesion_dc{i},[],size(lesion_dc{i},4)); %flattened 2D matrix that is <voxels>
 
-    %load disconnectivity files
-    lesion_dc=read_avw(strcat('/home/emo4002/colossus_shared3/pons_sfmodelling/processing/get_numerator/numerator_output/SUB',num2str(i), '_voxeldisconnect_2mm.nii.gz'));
-    lesion_dc=reshape(lesion_dc,[902629 1]); %flattened 1D matrix that is <voxels>
-    
     %lesion_dc{i}=lesion_dc{i}.*logical(graymask{i}); %same but now <grayvoxels>
     for j=1:nsess(i)
         pos=SUBzscore{i,j}(lesion_dc{i}(graymask{i})>1);

@@ -1,12 +1,23 @@
 clear all;
+lesion_dc={{},{},{},{},{}}
+graymask={{},{},{},{},{}}
+sessions ={{},{},{},{},{}}
+scans ={{},{},{},{},{}}
+sessions={scans,scans,scans,scans,scans}
+ICC_GSR=func; % GSR = global signal regressed
+ICC=func;
+Cupper_gm=func; % C upper = upper triangular portion of the functinal connectivity matrix
+Cupper_gsr= func;
 
-addpath([getenv('FSLDIR') '/etc/matlab']);
+if(isempty(which('save_avw')))
+    addpath([getenv('FSLDIR') '/etc/matlab']);
+end
 
-setenv( 'FSLDIR', '/usr/share/fsl/5.0/');
+setenv( 'FSLDIR', '/usr/local/fsl');
 fsldir = getenv('FSLDIR');
 fsldirmpath = sprintf('%s/etc/matlab',fsldir);
 path(path, fsldirmpath);
-clear fsldirmpath;
+clear fsldir fsldirmpath;
 
 % number of scans per session. row = sesssion, column = subject
 numscans1_11=[4 3 3 3 3 3 3 3 3 3 3;4 3 3 3 3 3 3 4 3 3 3;3 3 3 3 3 3 3 3 3 3 3;4 4 3 3 3 3 3 3 3 3 3 ; 3 3 3 3 3 0 3 3 3 3 3];
@@ -16,36 +27,108 @@ nscans = [numscans1_11, numscans12_23];
 % number of sessions per subject. 
 nsess=[5;5;5;5;5;4;5;5;5;5;5;3;5;5;5;5;5;5;5;2;5;5;5];
 
-studydir = '/home/emo4002/colossus_shared3/pons_sfmodelling/'
-resultsdir = 'results/ICC/'
+%% Global signal regression and ICC calculation for concatenated scans
+for i=1:23 %loop over subjects   
+    %load Harvard-Oxford cortical atlas.
+    % https://neurovault.org/collections/262/
+    
+    % load GM mask for global signal regression.
+    GM=read_avw('~/Documents/Thesis/colossus_syncs/c1referenceT1.nii'); 
+    GM_reshape=reshape(GM, [902629 1]);
+    GM_reshape(GM_reshape > 0.25) = 1; %threshold GM mask 
+    
+    % get mask for regional analyses
+    mask=getMask('cortex');
 
-strokeptsCalculateICC(nscans, nsess, studydir, resultsdir, 'stroke_pts/')
-controlsCalculateICC(ones(1, 47)+1;, nsess, studydir, resultsdir, 'control_subs/');
+    %load disconnectivity files
+    lesion_dc=read_avw(strcat('/home/emo4002/colossus_shared3/pons_sfmodelling/stroke_pts/',subject,'/lesionTract/HCP_MGH_32fold/wc_',subject,'_lesionTract.nii'));
+    lesion_dc=reshape(lesion_dc{i},[],size(lesion_dc{i},4)); %flattened 1D matrix that is <voxels>
+    
+    for j=1:nsess(i) %loop over sessions
+        cat_func=[]; %empty functional connectivity
+        cat_outliers=[]; %empty outliers matrix
+        
+        cat_func = loadScans(i, j, nscans);
+        outlierframes = scrubMotionFrames(i, j, nscans);
+        
+        ts=cat_func.'; %flip to <time> x <voxels>
+        ts_GM = ts(:,GM==1);% <time> x <mask voxels> 
 
-calculateZScores(nsess, studydir, resultsdir);
+        %global signal regression    
+        meants=mean(ts_GM,2); %mean across all gray matter voxels (i.e. where mask == 1)
+        confounds=[meants [0; diff(meants)] outlierframes]; %confounds list
+        Q=eye(size(confounds,1))-confounds*pinv(confounds);
+        ts_GSR=Q*(ts_GM); %global signal regressed time series
+        
+        %ts_clean = high motion frames excluded.
+        ts_clean_GSR=ts_GSR(sum(outlierframes,2)==0,:); %timeseries with motion frames excluded, and global signal regressed.            
+        %ts_clean=ts_GM(sum(outlierframes,2)==0,:); %timeseries wiith motion frames excluded. no GSR.
 
-figuresdir = 'results/figures/';
-makeFigures(studydir, figuresdir, figs);
+        disp(strcat('saving ICC for ', subject, ' session ', num2str(j)))
+        
+        %save voxelwise measure of ICC.
+        ICC_GSR_cat{i}{j}{k}=intrinsic_connectivity_contrast(ts_clean_GSR); %save timeseries into larger cell matrix
+    
+        % Make 3D image (for visualization)
+        p=1; %counter
+        for z=1:size(GM,1) %starts with the gray matter mask(which has all voxels in the 3d volume.)
+            % makes gray matter voxels equal to their ICC value.
+            if GM(z)==1
+                3DICC_GSR(z)=ICC_GSR_cat{i}{j}{k}(p); 
+                p=p+1;
+            else
+                3DICC_GSR(z) =0;
+            end
+        end
+        ICC_GSR_final_cat{i} = reshape(full_ICC_GSR,91,109,91);
+        save_avw(ICC_GSR_final_cat{i},strcat('/home/emo4002/colossus_shared3/pons_sfmodelling/stroke_pts/',subject, '/func/S',num2str(j), '/0.5_ICC_GSR_cat', subject, 'S', num2str(j)),'f',[2 2 2 2]);
+    end
+end
 
+save('/home/emo4002/colossus_shared3/pons_sfmodelling/stroke_pts/ICC_GSR_11subjects_cat.mat','ICC_GSR_cat')
+save('/home/emo4002/colossus_shared3/pons_sfmodelling/stroke_pts/ICC_11subjects_cat.mat','ICC_cat')
 
-%% Figure 1 - Boxplots of ICC voxels connected vs unconnected to lesion area - concatenated scans, Z-SCORED!
+%% calculate Z-scores of patient ICC values.
+clear
+load('/home/emo4002/colossus_shared3/pons_sfmodelling/stroke_pts/ICC_GSR_11subjects_cat.mat','ICC_GSR_cat')
+load('/home/emo4002/colossus_shared3/pons_sfmodelling/control_subs/crtl_cat_GSR_mean.mat', 'ctrl_cat_GSR_mean')
+load('/home/emo4002/colossus_shared3/pons_sfmodelling/control_subs/crtl_cat_GSR_stdev.mat', 'ctrl_cat_GSR_stdev')
+
+SUBzscore=[];
+
+for i=1:11
+    for j=1:nsess(i)
+        k=numscans(j,i); %concatenated scan is always stored in the kth cell of the ICC_GSR_cat cell array
+       
+        %load mean and stddev of controls
+        SUBi_ctrlmean = ctrl_cat_GSR_mean; %voxels that are in the GM mask of subject i. <1 x 101453 voxels>
+        SUBi_ctrlstdev = ctrl_cat_GSR_stdev;
+        
+        %subtract control mean from subject's ICC,
+        SUBzscore{i,j}=(ICC_GSR_cat{i}{j}{k}-SUBi_ctrlmean)./SUBi_ctrlstdev %z-score calculation: (X-mean)/sd of ctls
+        
+        for n = 1:size(SUBzscore{i,j},2)
+            if (isinf(SUBzscore{i,j}(n)))|| (isinf(-SUBzscore{i,j}(n)))
+                SUBzscore{i,j}(n)=NaN;
+            end
+        end
+    end
+end
+
+%% Boxplots of ICC voxels connected vs unconnected to lesion area - concatenated scans, Z-SCORED!
 traject = figure(1)
 set(traject, 'Position', [0 0 1400 1200])
 traject
-
 p =1;
 for i=1:3
     subject = strcat('SUB',num2str(i));
     %load gray matter masks
-    GM=read_avw('/home/emo4002/colossus_shared3/c1referenceT1.nii'); 
-    GM_reshape=reshape(GM, [902629 1]);
-    GM_reshape(GM_reshape > 0.25) = 1; %threshold GM mask
-    GM_reshape(GM_reshape <=0.25) = 0;
+    graymask{i} = read_avw('/home/emo4002/colossus_shared3/c1referenceT1.nii');
+    graymask{i}=reshape(graymask{i},[],1); %flattened 1D vector with a 1/0 for each voxel
+    graymask{i}=graymask{i}>0.5 %load lesion tracts
+    lesion_dc{i} = read_avw(strcat('/home/emo4002/colossus_shared3/pons_sfmodelling/',subject,'/lesionTract/HCP_MGH_32fold/wc_',subject,'_lesionTract.nii.gz'));
+    lesion_dc{i}=reshape(lesion_dc{i},[],size(lesion_dc{i},4)); %flattened 2D matrix that is <voxels>
 
-    %load disconnectivity files
-    lesion_dc=read_avw(strcat('/home/emo4002/colossus_shared3/pons_sfmodelling/processing/get_numerator/numerator_output/SUB',num2str(i), '_voxeldisconnect_2mm.nii.gz'));
-    lesion_dc=reshape(lesion_dc,[902629 1]); %flattened 1D matrix that is <voxels>
-    
     %lesion_dc{i}=lesion_dc{i}.*logical(graymask{i}); %same but now <grayvoxels>
     for j=1:nsess(i)
         pos=SUBzscore{i,j}(lesion_dc{i}(graymask{i})>1);
