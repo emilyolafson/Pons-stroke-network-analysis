@@ -1,10 +1,8 @@
 clear all;
 
-if(isempty(which('save_avw')))
-    addpath([getenv('FSLDIR') '/etc/matlab']);
-end
+addpath([getenv('FSLDIR') '/etc/matlab']);
 
-setenv( 'FSLDIR', '/usr/local/fsl');
+setenv( 'FSLDIR', '/usr/share/fsl');
 fsldir = getenv('FSLDIR');
 fsldirmpath = sprintf('%s/etc/matlab',fsldir);
 path(path, fsldirmpath);
@@ -22,9 +20,9 @@ nsess=[5;5;5;5;5;4;5;5;5;5;5;3;5;5;5;5;5;5;5;2;5;5;5];
 for i=1:23 %loop over subjects   
     %load Harvard-Oxford cortical atlas.
     % https://neurovault.org/collections/262/
-    
+    i=1
     % load GM mask for global signal regression.
-    GM=read_avw('~/Documents/Thesis/colossus_syncs/c1referenceT1.nii'); 
+    GM=read_avw('/home/emo4002/colossus_shared3/c1referenceT1.nii'); 
     GM_reshape=reshape(GM, [902629 1]);
     GM_reshape(GM_reshape > 0.25) = 1; %threshold GM mask 
     
