@@ -176,6 +176,123 @@ function [] = makeFigures(nsess, studydir, figuresdir, resultsdir, disconnectivi
 
     % Figure 4 - change in ICC in areas structurally connected to the lesion specific regions (cerebellum, cortex, or brainstem)
     if ismember(figs, 4)
+        for i=1:23
+            %load disconnectivity files
+            lesion_dc=read_avw(strcat(studydir, disconnectivitydir, 'SUB',num2str(i), '_voxeldisconnect_2mm.nii.gz'));
+            lesion_dc=reshape(lesion_dc,[902629 1]); %flattened 1D matrix that is <voxels>
+
+            baseline_z = SUBzscore{i}{1}(lesion_dc(GM_reshape)>thresh)  
+            if i==6
+                 = SUBzscore{i}{4}(lesion_dc(GM_reshape)>thresh);
+            elseif i==12
+                final_z = SUBzscore{i}{3}(lesion_dc(GM_reshape)>thresh);
+            elseif i==20
+                final_z = SUBzscore{i}{2}(lesion_dc(GM_reshape)>thresh);
+            else % most subjects came for 5 sessions.
+                final_z = SUBzscore{i}{5}(lesion_dc(GM_reshape)>thresh);
+            end
+
+            % load motor recovery scores (final - initial)
+            % column 6 = sesssion 1
+            % column 10 = sesssion 5
+            if i==6 % only 4 sessions (sessions 1, 2, 3, and 4)
+                recovery = df(i+3,9)-df(i+3,6)
+            elseif i==12 % only 3 sessions (session 1, 2, and 3)
+                recovery = df(i+3,8)-df(i+3,6)
+            elseif i==20 % only 2 sessions (session 1 and 2)
+                recovery = df(i+3,7)-df(i+3,6)
+            else
+                recovery = df(i+3,10)-df(i+3,6)
+            end
+            rec(i)=recovery
+
+            cort = getMask('cortex')
+
+            base_z = baseline_z(cort == 1);
+            fin_z = final_z(cort == 1);
+            [h,p,ci,stats]=ttest2(base_z,fin_z,'Vartype','unequal')
+            tst(i)=stats.tstat
+            p(i)=p
+            plot(tst,rec, '.r', 'MarkerSize', 18) 
+            hold on;
+            b=polyfit(tst,rec,1);
+            a=polyval(b,tst)
+            plot(tst,a);
+
+            [rho,p]=corr(tst', rec', 'Type', 'Pearson')
+            pears_rho = rho
+            pears_p=p
+            [rho,p]=corr(tst', rec', 'Type', 'Spearman')
+            spear_rho=rho
+            spear_p=p
+            xlabel('T-statistic: ICC Session 5 vs. ICC Sesssion 1', 'fontsize', 18)
+            ylabel('Session 5 - Session 1 Fugl-Meyer score', 'fontsize', 18)
+            ax = gca
+            ax.FontSize = 18
+            txt = ({strcat('Pearsons Correlation = ', num2str(pears_rho)), strcat('p = ',num2str(round(pears_p,4)))})
+            %txt2 = ({strcat('Spearmans Rank Correlation = ', num2str(spear_rho)), strcat('p = ',num2str(round(spear_p,4)))})
+            text(-20,70,txt, 'fontsize', 18)
+            title({'Relationship between motor recovery and change in session 1 vs session 5 ICC',' in cortical areas structurally connected to lesion'}, 'fontsize', 18)
+            saveas(gcf, strcat(studydir, figuresdir, '/correlation_cortex_changeICCvschangeFuglMeyer_baseline-vs-lastFU.png'))
+       
+            bstem = getMask('brainstem')
+
+            base_z = baseline_z(bstem == 1);
+            fin_z = final_z(bstem == 1);
+            [h,p,ci,stats]=ttest2(base_z,fin_z,'Vartype','unequal')
+            tst(i)=stats.tstat
+            p(i)=p
+            plot(tst,rec, '.r', 'MarkerSize', 18) 
+            hold on;
+            b=polyfit(tst,rec,1);
+            a=polyval(b,tst)
+            plot(tst,a);
+
+            [rho,p]=corr(tst', rec', 'Type', 'Pearson')
+            pears_rho = rho
+            pears_p=p
+            [rho,p]=corr(tst', rec', 'Type', 'Spearman')
+            spear_rho=rho
+            spear_p=p
+            xlabel('T-statistic: ICC Session 5 vs. ICC Sesssion 1', 'fontsize', 18)
+            ylabel('Session 5 - Session 1 Fugl-Meyer score', 'fontsize', 18)
+            ax = gca
+            ax.FontSize = 18
+            txt = ({strcat('Pearsons Correlation = ', num2str(pears_rho)), strcat('p = ',num2str(round(pears_p,4)))})
+            %txt2 = ({strcat('Spearmans Rank Correlation = ', num2str(spear_rho)), strcat('p = ',num2str(round(spear_p,4)))})
+            text(-20,70,txt, 'fontsize', 18)
+            title({'Relationship between motor recovery and change in session 1 vs session 5 ICC',' in brainstem areas structurally connected to lesion'}, 'fontsize', 18)
+            saveas(gcf, strcat(studydir, figuresdir, '/correlation_brainstem_changeICCvschangeFuglMeyer_baseline-vs-lastFU.png'))
+       
+            cereb = getMask('cerebellum')
+
+            base_z = baseline_z(cereb == 1);
+            fin_z = final_z(cereb == 1);
+            [h,p,ci,stats]=ttest2(base_z,fin_z,'Vartype','unequal')
+            tst(i)=stats.tstat
+            p(i)=p
+            plot(tst,rec, '.r', 'MarkerSize', 18) 
+            hold on;
+            b=polyfit(tst,rec,1);
+            a=polyval(b,tst)
+            plot(tst,a);
+
+            [rho,p]=corr(tst', rec', 'Type', 'Pearson')
+            pears_rho = rho
+            pears_p=p
+            [rho,p]=corr(tst', rec', 'Type', 'Spearman')
+            spear_rho=rho
+            spear_p=p
+            xlabel('T-statistic: ICC Session 5 vs. ICC Sesssion 1', 'fontsize', 18)
+            ylabel('Session 5 - Session 1 Fugl-Meyer score', 'fontsize', 18)
+            ax = gca
+            ax.FontSize = 18
+            txt = ({strcat('Pearsons Correlation = ', num2str(pears_rho)), strcat('p = ',num2str(round(pears_p,4)))})
+            %txt2 = ({strcat('Spearmans Rank Correlation = ', num2str(spear_rho)), strcat('p = ',num2str(round(spear_p,4)))})
+            text(-20,70,txt, 'fontsize', 18)
+            title({'Relationship between motor recovery and change in session 1 vs session 5 ICC',' in cerebellum areas structurally connected to lesion'}, 'fontsize', 18)
+            saveas(gcf, strcat(studydir, figuresdir, '/correlation_cerebellum_changeICCvschangeFuglMeyer_baseline-vs-lastFU.png'))
+        end
     end
 
 
