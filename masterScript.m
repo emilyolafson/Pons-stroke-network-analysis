@@ -20,11 +20,11 @@ studydir = '/home/emo4002/colossus_shared3/pons_sfmodelling/'
 resultsdir = 'results/ICC/'
 
 strokeptsCalculateICC(nscans, nsess, studydir, resultsdir, 'stroke_pts/')
-controlsCalculateICC(ones(1, 47)+1;, nsess, studydir, resultsdir, 'control_subs/');
+controlsCalculateICC(ones(1, 47)+1, nsess, studydir, resultsdir, 'control_subs/');
 
-calculateZScores(nsess, studydir, resultsdir);
+calculateZScores(nscans, nsess,  studydir, resultsdir);
 
 figuresdir = 'results/figures/';
 disconnectivitydir = 'processing/get_numerator/numerator_output/';
-figs = [1, 2, 3];
-makeFigures(studydir, figuresdir, disconnectivitydir, figs);
+figs = [3];
+makeFigures(nsess, studydir, figuresdir, resultsdir, disconnectivitydir, figs);

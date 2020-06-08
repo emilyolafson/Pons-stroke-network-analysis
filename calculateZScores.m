@@ -1,4 +1,4 @@
-function [] = calculateZScores(nscans, nsess, studydir, resultsdir);
+function [] = calculateZScores(nscans, nsess, studydir, resultsdir)
 % calculateZScores: calculates the Z-score for each voxel in each patient by subtracting each patient voxel's ICC value by the mean of the controls' voxel ICC value, and diving by the standard deviation of the controls' ICC value.
 % INPUT: 
 %     nscans: matrix of number of scans per session (rows) per subject (columns)
@@ -24,24 +24,24 @@ function [] = calculateZScores(nscans, nsess, studydir, resultsdir);
         
             % subtract control mean from subject's ICC, divide by sd of controls
             %z-score calculation: (Xstrokept-mean of controls)/(standard deviation of ctls)
-            SUBzscore{i,j}=(ICC_GSR_cat{i}-SUBi_ctrlmean)./SUBi_ctrlstdev
+            SUBzscore{i}{j}=(ICC_GSR_cat{i}{j}-SUBi_ctrlmean')./SUBi_ctrlstdev';
             % save individual's z-score as a .mat
             singlesub = SUBzscore{i}{j};
             save(strcat(studydir, resultsdir, 'SUB', num2str(i), '_S', num2str(j), '_zscoreICC.mat'), 'singlesub')
 
             % reshape data to 3D
-            GM = read_avw(str_cat(studydir, 'c1referenceT1.nii'));
-            GM_reshape = reshape(GM, [1 902629])
+            GM = read_avw(strcat(studydir, 'c1referenceT1.nii'));
+            GM_reshape = reshape(GM, [1 902629]);
             GM_reshape(GM_reshape > 0.25) = 1; %threshold GM mask
             GM_reshape(GM_reshape <=0.25) = 0;
             
             p=1; %counter
             zICC_GSR=[];
             zICC_GSR_3D=[];
-            for z=1:size(GM_reshape,1) %starts with the gray matter mask(which has all voxels in the 3d volume.)
+            for z=1:size(GM_reshape,2) %starts with the gray matter mask(which has all voxels in the 3d volume.)
                 % makes gray matter voxels equal to their ICC value.
                 if GM_reshape(z)==1
-                    zICC_GSR(z)=ICC_GSR_cat{i}{j}(p); 
+                    zICC_GSR(z)=SUBzscore{i}{j}(p); 
                     p=p+1;
                 else
                     zICC_GSR(z) =0;
@@ -52,5 +52,5 @@ function [] = calculateZScores(nscans, nsess, studydir, resultsdir);
         end
     end
     % save z-scores across subjects
-    save(strcat(studydir, resultsdir, 'zICC_23subjects.mat','SUBzscore'))
+    save(strcat(studydir, resultsdir, 'zICC_23subjects.mat'),'SUBzscore')
 end
