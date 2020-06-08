@@ -14,7 +14,7 @@ function mask = getMask(region)
         template(cort > 0) = 1;
         mask = reshape(template, [91 109 91]);
     end
-
+    
     if (strcmp(region, 'cortex') | strcmp(region,'brainstem'))
         subcort_atlas = read_avw(strcat('/usr/share/fsl/5.0/data/atlases/HarvardOxford/HarvardOxford-sub-maxprob-thr25-2mm.nii.gz')); %copied from /conn/utils/surf/c1referenceT1.nii. 91x109x91
         subcort_struct = parseXML(strcat('/usr/share/fsl/5.0/data/atlases/HarvardOxford-Subcortical.xml'));
@@ -36,7 +36,7 @@ function mask = getMask(region)
     end
 
     if strcmp(region,'cerebellum')
-        cere_atlas = read_avw(strcat('/usr/share/fsl/5.0/data/atlases/Cerebellum/Cerebellum-MNIfnirt-prob-2mm.nii.gz')); %copied from /conn/utils/surf/c1referenceT1.nii. 91x109x91
+        cere_atlas = read_avw(strcat('/usr/share/fsl/5.0/data/atlases/Cerebellum/Cerebellum-MNIfnirt-maxprob-thr25-2mm.nii.gz')); %copied from /conn/utils/surf/c1referenceT1.nii. 91x109x91
         cere_struct = parseXML(strcat('/usr/share/fsl/5.0/data/atlases/Cerebellum_MNIfnirt.xml'));
         idx = 1;
         for i = 2:2:56

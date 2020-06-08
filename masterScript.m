@@ -25,6 +25,6 @@ controlsCalculateICC(ones(1, 47)+1, nsess, studydir, resultsdir, 'control_subs/'
 calculateZScores(nscans, nsess,  studydir, resultsdir);
 
 figuresdir = 'results/figures/';
-disconnectivitydir = 'processing/get_numerator/numerator_output/';
-figs = [3];
+disconnectivitydir = 'processing/disconnectivity/numerator_output/';
+figs = [4];
 makeFigures(nsess, studydir, figuresdir, resultsdir, disconnectivitydir, figs);

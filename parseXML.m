@@ -33,6 +33,7 @@ function theStruct = parseXML(filename)
          children(count) = makeStructFromNode(theChild);
       end
    end
+   end
 
    % ----- Local function MAKESTRUCTFROMNODE -----
    function nodeStruct = makeStructFromNode(theNode)
@@ -48,6 +49,7 @@ function theStruct = parseXML(filename)
       nodeStruct.Data = char(theNode.getData); 
    else
       nodeStruct.Data = '';
+   end
    end
 
    % ----- Local function PARSEATTRIBUTES -----
@@ -68,4 +70,6 @@ function theStruct = parseXML(filename)
          attributes(count).Value = char(attrib.getValue);
       end
    end
+   end
+   
 end
