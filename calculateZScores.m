@@ -32,6 +32,9 @@ function [] = calculateZScores(nscans, nsess, studydir, resultsdir);
             % reshape data to 3D
             GM = read_avw(str_cat(studydir, 'c1referenceT1.nii'));
             GM_reshape = reshape(GM, [1 902629])
+            GM_reshape(GM_reshape > 0.25) = 1; %threshold GM mask
+            GM_reshape(GM_reshape <=0.25) = 0;
+            
             p=1; %counter
             zICC_GSR=[];
             zICC_GSR_3D=[];
