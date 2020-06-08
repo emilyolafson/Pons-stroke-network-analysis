@@ -1,20 +1,22 @@
-function [] = makeFigures(nsess, studydir, figuresdir, disconnectivitydir. figs=1:5)
+function [] = makeFigures(nsess, studydir, figuresdir, resultsdir, disconnectivitydir, figs=1:5)
 % makeFigures: generate figures for Pontine stroke network analysis project. 
 % INPUT: 
 %     nsess: number of sessions per subject (columns)
 %     studydir: folder containing subject folders and folder for outputs.
 %     figures: name of folder where figures will be saved.
+%     results: name of folder where ICC values are.
 %     disconnectivitydir: name of folder where disconnectivity maps are.
 %     figs: list of figures to be generated.
 %
     % load z-scores
-    load(strcat(studydir, resultsdir, 'zICC_23subjects.mat'),'SUBzscore'))
+    load(strcat(studydir, resultsdir, 'zICC_23subjects.mat'),'SUBzscore')
     
     % load gray matter masks
     GM = read_avw('/home/emo4002/colossus_shared3/c1referenceT1.nii'); 
     GM_reshape = reshape(GM, [902629 1]);
     GM_reshape(GM_reshape > 0.25) = 1; %threshold GM mask
     GM_reshape(GM_reshape <= 0.25) = 0;
+    GM_reshape = logical(GM_reshape);
 
     % set analysis variables
     thresh = 0.1; % value above which voxels are considered to be 'connected' to the lesion
@@ -23,244 +25,31 @@ function [] = makeFigures(nsess, studydir, figuresdir, disconnectivitydir. figs=
     if ismember(figs, 1)
         k=0;
         fig1 = figure(1)
-        set(fig1, 'Position', [0 0 1400 1400])
-        p = 1;
-        for i = 1:5
-            subject = strcat('SUB',num2str(i));
-            % load disconnectivity files
-            lesion_dc = read_avw(strcat(studydir, disconnectivitydir, 'SUB',num2str(i), '_voxeldisconnect_2mm.nii.gz'));
-            lesion_dc = reshape(lesion_dc,[902629 1]); %flattened 1D matrix that is <voxels>
-            for j = 1:nsess(i)
-                pos = SUBzscore{i,j}(lesion_dc(GM_reshape)>thresh);
-                sizepos = size(pos,2);
-                zer = SUBzscore{i,j}(lesion_dc(GM_reshape)<thresh);
-                sizezer = size(zer,2);
-                grp = [zeros(1,size(pos,2)), ones(1,size(zer,2))];
-                fun = [pos zer];
-                hold on;
-                subplot(5,5, p);
-                boxplot(fun, grp);
-                ylim([-6 6])
-                title({strcat('SUB', num2str(i), ' session ', num2str(j)) , strcat("n=", num2str(sizepos), ", n=", num2str(sizezer))})
-                xlabel('Connectivity to lesion area')
-                ylabel('z-score')
-                xticklabels({'Connected', 'Not connected'})
-                p=p+1;
-            end
-        end
-        k=k+1;
-        exportgraphics(gcf, strcat(studydir, figuresdir, '/boxplots_connect-vs-disconnect_', num2str(k), '.pdf', 'ContentType', 'vector');
-        close(fig1)
-
-        fig2 = figure(2)
         set(fig1, 'Position', [0 0 1400 280])
-        p = 1;
-        for i = 6
-            subject = strcat('SUB',num2str(i));
-            % load disconnectivity files
-            lesion_dc = read_avw(strcat(studydir, disconnectivitydir, 'SUB',num2str(i), '_voxeldisconnect_2mm.nii.gz'));
-            lesion_dc = reshape(lesion_dc,[902629 1]); %flattened 1D matrix that is <voxels>
-            for j = 1:nsess(i)
-                pos = SUBzscore{i,j}(lesion_dc(GM_reshape)>thresh);
-                sizepos = size(pos,2);
-                zer = SUBzscore{i,j}(lesion_dc(GM_reshape)<thresh);
-                sizezer = size(zer,2);
-                grp = [zeros(1,size(pos,2)), ones(1,size(zer,2))];
-                fun = [pos zer];
-                hold on;
-                subplot(1,5, p);
-                boxplot(fun, grp);
-                ylim([-6 6])
-                title({strcat('SUB', num2str(i), ' session ', num2str(j)) , strcat("n=", num2str(sizepos), ", n=", num2str(sizezer))})
-                xlabel('Connectivity to lesion area')
-                ylabel('z-score')
-                xticklabels({'Connected', 'Not connected'})
-                p=p+1;
-            end
-        end
-        k=k+1;
-        exportgraphics(gcf, strcat(studydir, figuresdir, '/boxplots_connect-vs-disconnect_', num2str(k), '.pdf', 'ContentType', 'vector');
-        close(fig2)
 
-        fig3 = figure(3)
-        set(fig3, 'Position', [0 0 1400 1400])
-        p = 1;
-        for i = 7:11
+        for i = 1:23
             subject = strcat('SUB',num2str(i));
             % load disconnectivity files
             lesion_dc = read_avw(strcat(studydir, disconnectivitydir, 'SUB',num2str(i), '_voxeldisconnect_2mm.nii.gz'));
             lesion_dc = reshape(lesion_dc,[902629 1]); %flattened 1D matrix that is <voxels>
             for j = 1:nsess(i)
-                pos = SUBzscore{i,j}(lesion_dc(GM_reshape)>thresh);
+                pos = SUBzscore{i}{j}(lesion_dc(GM_reshape)>thresh);
                 sizepos = size(pos,2);
-                zer = SUBzscore{i,j}(lesion_dc(GM_reshape)<thresh);
+                zer = SUBzscore{i}{j}(lesion_dc(GM_reshape)<thresh);
                 sizezer = size(zer,2);
                 grp = [zeros(1,size(pos,2)), ones(1,size(zer,2))];
                 fun = [pos zer];
                 hold on;
-                subplot(5,5, p);
+                subplot(1,nsess(i), p);
                 boxplot(fun, grp);
                 ylim([-6 6])
                 title({strcat('SUB', num2str(i), ' session ', num2str(j)) , strcat("n=", num2str(sizepos), ", n=", num2str(sizezer))})
                 xlabel('Connectivity to lesion area')
                 ylabel('z-score')
                 xticklabels({'Connected', 'Not connected'})
-                p=p+1;
             end
+            saveas(gcf, strcat(studydir, figuresdir, 'boxplots_connect-vs-disconnect_', num2str(i), '.png'));
         end
-        k=k+1;
-        exportgraphics(gcf, strcat(studydir, figuresdir, '/boxplots_connect-vs-disconnect_', num2str(k), '.pdf', 'ContentType', 'vector');
-        close(fig3)
-
-        fig4 = figure(4)
-        set(fig4, 'Position', [0 0 1400 280])
-        p = 1;
-        for i = 12
-            subject = strcat('SUB',num2str(i));
-            % load disconnectivity files
-            lesion_dc = read_avw(strcat(studydir, disconnectivitydir, 'SUB',num2str(i), '_voxeldisconnect_2mm.nii.gz'));
-            lesion_dc = reshape(lesion_dc,[902629 1]); %flattened 1D matrix that is <voxels>
-            for j = 1:nsess(i)
-                pos = SUBzscore{i,j}(lesion_dc(GM_reshape)>thresh);
-                sizepos = size(pos,2);
-                zer = SUBzscore{i,j}(lesion_dc(GM_reshape)<thresh);
-                sizezer = size(zer,2);
-                grp = [zeros(1,size(pos,2)), ones(1,size(zer,2))];
-                fun = [pos zer];
-                hold on;
-                subplot(1,5, p);
-                boxplot(fun, grp);
-                ylim([-6 6])
-                title({strcat('SUB', num2str(i), ' session ', num2str(j)) , strcat("n=", num2str(sizepos), ", n=", num2str(sizezer))})
-                xlabel('Connectivity to lesion area')
-                ylabel('z-score')
-                xticklabels({'Connected', 'Not connected'})
-                p=p+1;
-            end
-        end
-        k=k+1;
-        exportgraphics(gcf, strcat(studydir, figuresdir, '/boxplots_connect-vs-disconnect_', num2str(k), '.pdf', 'ContentType', 'vector');
-        close(fig4)
-
-        fig5 = figure(5)
-        set(fig5, 'Position', [0 0 1400 1400])
-        p = 1;
-        for i = 13:17
-            subject = strcat('SUB',num2str(i));
-            % load disconnectivity files
-            lesion_dc = read_avw(strcat(studydir, disconnectivitydir, 'SUB',num2str(i), '_voxeldisconnect_2mm.nii.gz'));
-            lesion_dc = reshape(lesion_dc,[902629 1]); %flattened 1D matrix that is <voxels>
-            for j = 1:nsess(i)
-                pos = SUBzscore{i,j}(lesion_dc(GM_reshape)>thresh);
-                sizepos = size(pos,2);
-                zer = SUBzscore{i,j}(lesion_dc(GM_reshape)<thresh);
-                sizezer = size(zer,2);
-                grp = [zeros(1,size(pos,2)), ones(1,size(zer,2))];
-                fun = [pos zer];
-                hold on;
-                subplot(5,5, p);
-                boxplot(fun, grp);
-                ylim([-6 6])
-                title({strcat('SUB', num2str(i), ' session ', num2str(j)) , strcat("n=", num2str(sizepos), ", n=", num2str(sizezer))})
-                xlabel('Connectivity to lesion area')
-                ylabel('z-score')
-                xticklabels({'Connected', 'Not connected'})
-                p=p+1;
-            end
-        end
-        k=k+1;
-        exportgraphics(gcf, strcat(studydir, figuresdir, '/boxplots_connect-vs-disconnect_', num2str(k), '.pdf', 'ContentType', 'vector');
-        close(fig5)
-
-        fig5 = figure(5)
-        set(fig5, 'Position', [0 0 1400 560])
-        p = 1;
-        for i = 18:19
-            subject = strcat('SUB',num2str(i));
-            % load disconnectivity files
-            lesion_dc = read_avw(strcat(studydir, disconnectivitydir, 'SUB',num2str(i), '_voxeldisconnect_2mm.nii.gz'));
-            lesion_dc = reshape(lesion_dc,[902629 1]); %flattened 1D matrix that is <voxels>
-            for j = 1:nsess(i)
-                pos = SUBzscore{i,j}(lesion_dc(GM_reshape)>thresh);
-                sizepos = size(pos,2);
-                zer = SUBzscore{i,j}(lesion_dc(GM_reshape)<thresh);
-                sizezer = size(zer,2);
-                grp = [zeros(1,size(pos,2)), ones(1,size(zer,2))];
-                fun = [pos zer];
-                hold on;
-                subplot(2,5, p);
-                boxplot(fun, grp);
-                ylim([-6 6])
-                title({strcat('SUB', num2str(i), ' session ', num2str(j)) , strcat("n=", num2str(sizepos), ", n=", num2str(sizezer))})
-                xlabel('Connectivity to lesion area')
-                ylabel('z-score')
-                xticklabels({'Connected', 'Not connected'})
-                p=p+1;
-            end
-        end
-        k=k+1;
-        exportgraphics(gcf, strcat(studydir, figuresdir, '/boxplots_connect-vs-disconnect_', num2str(k), '.pdf', 'ContentType', 'vector');
-        close(fig6)
-
-        fig6 = figure(6)
-        set(fig6, 'Position', [0 0 1400 280])
-        p = 1;
-        for i = 20
-            subject = strcat('SUB',num2str(i));
-            % load disconnectivity files
-            lesion_dc = read_avw(strcat(studydir, disconnectivitydir, 'SUB',num2str(i), '_voxeldisconnect_2mm.nii.gz'));
-            lesion_dc = reshape(lesion_dc,[902629 1]); %flattened 1D matrix that is <voxels>
-            for j = 1:nsess(i)
-                pos = SUBzscore{i,j}(lesion_dc(GM_reshape)>thresh);
-                sizepos = size(pos,2);
-                zer = SUBzscore{i,j}(lesion_dc(GM_reshape)<thresh);
-                sizezer = size(zer,2);
-                grp = [zeros(1,size(pos,2)), ones(1,size(zer,2))];
-                fun = [pos zer];
-                hold on;
-                subplot(1,5, p);
-                boxplot(fun, grp);
-                ylim([-6 6])
-                title({strcat('SUB', num2str(i), ' session ', num2str(j)) , strcat("n=", num2str(sizepos), ", n=", num2str(sizezer))})
-                xlabel('Connectivity to lesion area')
-                ylabel('z-score')
-                xticklabels({'Connected', 'Not connected'})
-                p=p+1;
-            end
-        end
-        k=k+1;
-        exportgraphics(gcf, strcat(studydir, figuresdir, '/boxplots_connect-vs-disconnect_', num2str(k), '.pdf', 'ContentType', 'vector');
-        close(fig6)
-
-        fig7 = figure(7)
-        set(fig7, 'Position', [0 0 1400 840])
-        p = 1;
-        for i = 21:23
-            subject = strcat('SUB',num2str(i));
-            % load disconnectivity files
-            lesion_dc = read_avw(strcat(studydir, disconnectivitydir, 'SUB',num2str(i), '_voxeldisconnect_2mm.nii.gz'));
-            lesion_dc = reshape(lesion_dc,[902629 1]); %flattened 1D matrix that is <voxels>
-            for j = 1:nsess(i)
-                pos = SUBzscore{i,j}(lesion_dc(GM_reshape)>thresh);
-                sizepos = size(pos,2);
-                zer = SUBzscore{i,j}(lesion_dc(GM_reshape)<thresh);
-                sizezer = size(zer,2);
-                grp = [zeros(1,size(pos,2)), ones(1,size(zer,2))];
-                fun = [pos zer];
-                hold on;
-                subplot(3,5, p);
-                boxplot(fun, grp);
-                ylim([-6 6])
-                title({strcat('SUB', num2str(i), ' session ', num2str(j)) , strcat("n=", num2str(sizepos), ", n=", num2str(sizezer))})
-                xlabel('Connectivity to lesion area')
-                ylabel('z-score')
-                xticklabels({'Connected', 'Not connected'})
-                p=p+1;
-            end
-        end
-        k=k+1;
-        exportgraphics(gcf, strcat(studydir, figuresdir, '/boxplots_connect-vs-disconnect_', num2str(k), '.pdf', 'ContentType', 'vector');
-        close(fig7)
     end
     clear all;
     close all;
@@ -320,7 +109,6 @@ function [] = makeFigures(nsess, studydir, figuresdir, disconnectivitydir. figs=
                 recovery = df(i+3,10)-df(i+3,6)
             end
             rec(i)=recovery
-            savea(gcf, )
         end
 
         plot(tst,rec, '.r', 'MarkerSize', 18)
@@ -343,7 +131,7 @@ function [] = makeFigures(nsess, studydir, figuresdir, disconnectivitydir. figs=
         %txt2 = ({strcat('Spearmans Rank Correlation = ', num2str(spear_rho)), strcat('p = ',num2str(round(spear_p,4)))})
         text(-20,70,txt, 'fontsize', 18)
         title({'Relationship between motor recovery and change in session 1 vs session 5 ICC',' in cortical areas structurally connected to lesion'}, 'fontsize', 18)
-        exportgraphics(gcf, strcat(studydir, figuresdir, '/correlation_allGM_changeICCvschangeFuglMeyer_baseline-vs-lastFU.pdf', 'ContentType', 'vector'))
+        saveas(gcf, strcat(studydir, figuresdir, '/correlation_allGM_changeICCvschangeFuglMeyer_baseline-vs-lastFU.pdf'))
     end
     clear all;
     close all;
@@ -399,7 +187,7 @@ function [] = makeFigures(nsess, studydir, figuresdir, disconnectivitydir. figs=
         xlabel('T-statistic: ICC between sequential sessions (Follow-up vs. Baseline)', 'fontsize', 18)
         ylabel('Sequential session change in Fugl-Meyer score (Follow-up - Baseline)', 'fontsize', 18)
         title({'Relationship between motor recovery & change in sequential baseline v. followup','ICC in cortical areas structurally connected to lesion'}, 'fontsize', 18)
-        exportgraphics(gcf, strcat(studydir, figuresdir, '/correlation_allGM_changeICCvschangeFuglMeyer_between-subsequent-FUs.pdf', 'ContentType', 'vector'))
+        saveas(gcf, strcat(studydir, figuresdir, '/correlation_allGM_changeICCvschangeFuglMeyer_between-subsequent-FUs.pdf'))
     end
     clear all;
     close all;
@@ -410,9 +198,9 @@ function [] = makeFigures(nsess, studydir, figuresdir, disconnectivitydir. figs=
 
 
     % Figure 4 - change in ICC in areas structurally connected to the lesion specific regions (cerebellum, cortex, or brainstem)
-    elseif ismember(figs, 5)
-    elseif ismember(figs, 6)
-    elseif ismember(figs, 7)
+  %  elseif ismember(figs, 5)
+  %  elseif ismember(figs, 6)
+  %  elseif ismember(figs, 7)
     end
 
 en
