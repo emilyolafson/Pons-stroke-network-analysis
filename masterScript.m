@@ -26,5 +26,6 @@ calculateZScores(nscans, nsess,  studydir, resultsdir);
 
 figuresdir = 'results/figures/';
 disconnectivitydir = 'processing/disconnectivity/numerator_output/';
-figs = [4];
-makeFigures(nsess, studydir, figuresdir, resultsdir, disconnectivitydir, figs);
+
+figs = [6];
+[tst,rec,nvoxels]=makeFigures(nsess, studydir, figuresdir, resultsdir, disconnectivitydir, figs);

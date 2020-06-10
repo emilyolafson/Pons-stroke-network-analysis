@@ -10,12 +10,12 @@ function strokeptsCalcualteICC(nscans, nsess, studydir, resultsdir, strokedir)
 % OUTPUT: 
 %     SUB*_S*_ICC.nii.gz: 3D rendering of ICC values in 2mm MNI space (91x109x91 voxels) 
 %     ICC_GSR_cat.mat: the global signal regressed ICC values across all voxels in the gray matter in a cell array, where each cell contains the ICC values for each session saved separately.
-   
-    clear all;
+  temp=  load(strcat(studydir, resultsdir, 'ICC_GSR_23subjects.mat'),'ICC_GSR_cat')
+strokedir='stroke_pts/'
     %% Global signal regression and ICC calculation for concatenated scans
-    for i=1:size(nscans, 2) %loop over subjects 
+    for i=12 %loop over subjects 
 
-        GM=read_avw('/home/emo4002/colossus_shared3/c1referenceT1.nii'); 
+        GM=read_avw('/home/emo4002/colossus_shared3/pons_sfmodelling/c1referenceT1.nii'); 
         GM_reshape=reshape(GM, [902629 1]);
         GM_reshape(GM_reshape > 0.25) = 1; %threshold GM mask
         GM_reshape(GM_reshape <=0.25) = 0;
@@ -64,6 +64,7 @@ function strokeptsCalcualteICC(nscans, nsess, studydir, resultsdir, strokedir)
         end
     end
 
-    save(strcat((studydir, resultsdir, 'ICC_GSR_23subjects.mat','ICC_GSR_cat')
+    save(strcat(studydir, resultsdir, 'ICC_GSR_23subjects.mat'),'ICC_GSR_cat')
 end
+
 
