@@ -27,5 +27,6 @@ calculateZScores(nscans, nsess,  studydir, resultsdir);
 figuresdir = 'results/figures/';
 disconnectivitydir = 'processing/disconnectivity/numerator_output/';
 
-figs = [6];
-[tst,rec,nvoxels]=makeFigures(nsess, studydir, figuresdir, resultsdir, disconnectivitydir, figs);
+figs = [4];
+k=1; %1 = cortex, 3 = cerebellum
+[tst,rec,nvoxels]=makeFigures(nsess, studydir, figuresdir, resultsdir, disconnectivitydir, figs,k);
