@@ -1,4 +1,4 @@
-function [tst, rec, nvoxels] = makeFigures(nsess, studydir, figuresdir, resultsdir, disconnectivitydir, figs, k)
+function [tst, rec, nvoxels] = makeFigures(nsess, studydir, strokedir, figuresdir, resultsdir, disconnectivitydir, figs, k)
 % makeFigures: generate figures for Pontine stroke network analysis project. 
 % INPUT: 
 %     nsess: number of sessions per subject (columns)
@@ -20,8 +20,12 @@ function [tst, rec, nvoxels] = makeFigures(nsess, studydir, figuresdir, resultsd
     df = readmatrix(strcat(studydir, 'demog_strokepts2.csv'));
     masks=[{'cortex'}, {'brainstem'}, {'cerebellum'}];
 
+    %set colormaps for subjects 
+    cols1=rand(11,3);
+    cols2=rand(12,3);
+    cols=[cols1;cols2];
     % set analysis variables
-    thresh = 0.4; % value above which voxels are considered to be 'connected' to the lesion
+    thresh = 0.1; % value above which voxels are considered to be 'connected' to the lesion
 
     % Figure 1 - boxplots of voxels connected vs unconnected to lesion
     if ismember(1, figs)
@@ -33,6 +37,7 @@ function [tst, rec, nvoxels] = makeFigures(nsess, studydir, figuresdir, resultsd
             % load disconnectivity files
             lesion_dc = read_avw(strcat(studydir, disconnectivitydir, 'SUB',num2str(i), '_voxeldisconnect_2mm.nii.gz'));
             lesion_dc = reshape(lesion_dc,[902629 1]); %flattened 1D matrix that is <voxels>
+           
             for j = 1:nsess(i)
                 pos = SUBzscore{i}{j}(lesion_dc(GM_reshape)>thresh);
                 sizepos = size(pos,2);
@@ -41,8 +46,8 @@ function [tst, rec, nvoxels] = makeFigures(nsess, studydir, figuresdir, resultsd
                 grp = [zeros(1,size(pos,2)), ones(1,size(zer,2))];
                 fun = [pos zer];
                 hold on;
-                subplot(1,nsess(i), j);
-                boxplot(fun, grp);
+                %subplot(1,nsess(i), j);
+                boxplot(fun, grp, 20);
                 ylim([-6 6])
                 title({strcat('SUB', num2str(i), ' session ', num2str(j)) , strcat("n=", num2str(sizepos), ", n=", num2str(sizezer))})
                 xlabel('Connectivity to lesion area')
@@ -52,7 +57,7 @@ function [tst, rec, nvoxels] = makeFigures(nsess, studydir, figuresdir, resultsd
             saveas(gcf, strcat(studydir, figuresdir, 'boxplots_connect-vs-disconnect_', num2str(i), '.png'));
         end
     end
-    close all;
+    close;
 
 
     % Figure 2 - change in motor scores vs change in ICC from the last scan to the first scan 
@@ -64,8 +69,6 @@ function [tst, rec, nvoxels] = makeFigures(nsess, studydir, figuresdir, resultsd
         set(fig1, 'Position', [0 0 1000 1000]);
 
         for i=1:23
-
-
             %load disconnectivity files
             lesion_dc=read_avw(strcat(studydir, disconnectivitydir, 'SUB',num2str(i), '_voxeldisconnect_2mm.nii.gz'));
             lesion_dc=reshape(lesion_dc,[902629 1]); %flattened 1D matrix that is <voxels>
@@ -91,30 +94,30 @@ function [tst, rec, nvoxels] = makeFigures(nsess, studydir, figuresdir, resultsd
             % calculate the difference in z-score normalized ICC values at baseline and followup.
             % metric is a t-statistic using a paired t-test with unequal variances.
             % positive t-stat means distribution 
-            [h,p,ci,stats]=ttest2(final_z,baseline_z,'Vartype','unequal')
-            tst(i)=stats.tstat
-            p(i)=p
+            [h,p,ci,stats]=ttest2(final_z,baseline_z,'Vartype','unequal');
+            tst(i)=stats.tstat;
+            p(i)=p;
 
             % load motor recovery scores (final - initial)
             % column 4 = sesssion 1
             % column 8 = sesssion 5
              if i==6 % only 4 sessions (sessions 1, 2, 3, and 4)
-                recovery = df(i,7)-df(i,4)
+                recovery = df(i,7)-df(i,4);
             elseif i==12 % only 3 sessions (session 1, 2, and 3)
-                recovery = df(i,6)-df(i,4)
+                recovery = df(i,6)-df(i,4);
             elseif i==20 % only 2 sessions (session 1 and 2)
-                recovery = df(i,5)-df(i,4)
+                recovery = df(i,5)-df(i,4);
             elseif i==22
-                recovery = df(i,8)-df(i,6)
+                recovery = df(i,8)-df(i,6);
             elseif i==23
-                recovery = df(i,8)-df(i,5)
+                recovery = df(i,8)-df(i,5);
             else
-                recovery = df(i,8)-df(i,4)
+                recovery = df(i,8)-df(i,4);
             end
-            rec(i)=recovery
+            rec(i)=recovery;
         end
 
-        plot(tst,rec, '.r', 'MarkerSize', 18)
+        scatter(tst,rec, 50, cols, 'filled', 'MarkerEdgeColor', 'b')
         hold on;
         b=polyfit(tst,rec,1);
         a=polyval(b,tst)
@@ -123,9 +126,7 @@ function [tst, rec, nvoxels] = makeFigures(nsess, studydir, figuresdir, resultsd
         [rho,p]=corr(tst', rec', 'Type', 'Pearson')
         pears_rho = rho
         pears_p=p
-        [rho,p]=corr(tst', rec', 'Type', 'Spearman')
-        spear_rho=rho
-        spear_p=p
+     
         xlabel('T-statistic: ICC Last followup vs. ICC Baseline', 'fontsize', 18)
         ylabel('Last followup - Baseline Fugl-Meyer score', 'fontsize', 18)
         ax = gca
@@ -149,9 +150,9 @@ function [tst, rec, nvoxels] = makeFigures(nsess, studydir, figuresdir, resultsd
 
         t=1;
         for i=1:23
-            if i==13
-                continue
-            end
+           % if i==13
+          %      continue
+          %  end
             disp(num2str(i))
             %load disconnectivity files
             lesion_dc=read_avw(strcat(studydir, disconnectivitydir, 'SUB',num2str(i), '_voxeldisconnect_2mm.nii.gz'));
@@ -228,8 +229,52 @@ function [tst, rec, nvoxels] = makeFigures(nsess, studydir, figuresdir, resultsd
                 t = t+1;
             end
         end
-        
-        plot(tst,rec, '.r', 'MarkerSize', 18) 
+        colors=[];
+        p=1;
+        for k=1:23
+            if k==6
+                colors(p,1:3)=cols(k,:);
+                colors(p+1,1:3)=cols(k,:);
+                 colors(p+2,1:3)=cols(k,:);
+                p=p+3
+                continue;
+            end
+            if k==12
+                colors(p,1:3)=cols(k,:);
+                colors(p+1,1:3)=cols(k,:);
+                
+                p=p+2
+                continue;
+            end
+            if k==20
+                colors(p,1:3)=colors(k,:);
+                p=p+1;
+                continue
+            end
+            if k==22
+                colors(p,1:3)=colors(k,:);
+                colors(p+1,1:3)=colors(k,:);
+
+                p=p+2;
+                continue
+            end
+            if k==23
+                colors(p,1:3)=colors(k,:);
+                 colors(p+1,1:3)=colors(k,:);
+                 colors(p+2,1:3)=colors(k,:);
+
+                continue;
+            end
+            colors(p,1:3)=cols(k,:);
+            colors(p+1,1:3)=cols(k,:);
+            colors(p+2,1:3)=cols(k,:);
+            colors(p+3,1:3)=cols(k,:);
+
+            p=p+4;
+        end
+        a=[];
+        a(2:5)=[3, 4, 2]
+        scatter(tst,rec, 50, 'filled', 'MarkerEdgeColor', 'b')
         hold on;
         b=polyfit(tst,rec,1);
         a=polyval(b,tst)
@@ -335,12 +380,12 @@ function [tst, rec, nvoxels] = makeFigures(nsess, studydir, figuresdir, resultsd
                 saveas(gcf, strcat(studydir, figuresdir, 'distribution_S5_S1_SUB', num2str(i), '.png'))
            clf;
             end
-            [h,p,ci,stats]=ttest2(baseline_z,final_z,'Vartype','unequal');
+            [h,p,ci,stats]=ttest2(final_z,baseline_z,'Vartype','unequal');
             tst(i)=stats.tstat
             p(i)=p
    
         end
-        plot(tst,rec, '.r', 'MarkerSize', 18) 
+        scatter(tst,rec, 50, cols, 'filled', 'MarkerEdgeColor', 'b')
         hold on;
         b=polyfit(tst,rec,1);
         a=polyval(b,tst)
@@ -362,10 +407,10 @@ function [tst, rec, nvoxels] = makeFigures(nsess, studydir, figuresdir, resultsd
         title({'Relationship between motor recovery and change in last followup vs baseline ICC',strcat('in ', masks{k}, 'structurally connected to lesion')}, 'fontsize', 18)
         saveas(gcf, strcat(studydir, figuresdir, '/Figure4_correlation_', masks{k}, '_changeICCvschangeFuglMeyer_baseline-vs-lastFU.png'))
 
-end
+    end
 
 % Figure 5 - correlation: change in ICC between session 1 and session2 & change in Fugl-Meyer session 1 and sesssion 2.
-    if ismember(5,figs)
+    if ismember(5,figs) 
         fig1 = figure(1)
         set(fig1, 'Position', [0 0 1000 700])
 
@@ -447,9 +492,10 @@ end
                 continue;
             end
                  %load disconnectivity files
-        lesion_dc=read_avw(strcat(studydir, disconnectivitydir, 'SUB',num2str(i), '_voxeldisconnect_2mm.nii.gz'));
-        lesion_dc=reshape(lesion_dc,[902629 1]); %flattened 1D matrix that is <voxels>
-        lesion_intersect = lesion_dc.*intersect;
+            lesion_dc=read_avw(strcat(studydir, disconnectivitydir, 'SUB',num2str(i), '_voxeldisconnect_2mm.nii.gz'));
+            lesion_dc=reshape(lesion_dc,[902629 1]); %flattened 1D matrix that is <voxels>
+            lesion_intersect = lesion_dc.*intersect;
+
             baseline_z = SUBzscore{i}{4}(lesion_intersect(GM_reshape==1)>thresh);
             final_z = SUBzscore{i}{5}(lesion_intersect(GM_reshape==1)>thresh);
             recovery = df(i,8)-df(i,7);
@@ -462,7 +508,7 @@ end
         subplot(2, 2, 1); 
                     title('Session 1 vs Session 2')
 
-        plot(tst_1,rec_1, '.r', 'MarkerSize', 18) 
+        scatter(tst_1,rec_1, 50, cols, 'filled', 'MarkerEdgeColor', 'b')
         hold on;
         b=polyfit(tst_1,rec_1,1);
         a=polyval(b,tst_1)
@@ -483,7 +529,7 @@ end
         subplot(2, 2, 2);
             title('Session 2 vs Session 3')
 
-        plot(tst_2,rec_2, '.r', 'MarkerSize', 18) 
+        scatter(tst_2,rec_2, 50, cols, 'filled', 'MarkerEdgeColor', 'b')
         hold on;
         b=polyfit(tst_2,rec_2,1);
         a=polyval(b,tst_2)
@@ -504,7 +550,7 @@ end
         subplot(2, 2, 3);
               title('Session 3 vs Session 4')
 
-        plot(tst_3,rec_3, '.r', 'MarkerSize', 18) 
+        scatter(tst_3,rec_3, 50, cols, 'filled', 'MarkerEdgeColor', 'b')
         hold on;
         b=polyfit(tst_3,rec_3,1);
         a=polyval(b,tst_3)
@@ -525,7 +571,7 @@ end
         subplot(2, 2, 4);
         title('Session 4 vs Session 5')
 
-        plot(tst_4,rec_4, '.r', 'MarkerSize', 18) 
+        scatter(tst_4,rec_4, 50, cols, 'filled', 'MarkerEdgeColor', 'b')
         hold on;
         b=polyfit(tst_4,rec_4,1);
         a=polyval(b,tst_4)
@@ -560,7 +606,7 @@ end
         for i=1:23
                 ran{i}=rand(1,3)
 
-            plot([7 14 30 90 180], data(i,4:8), '-o', 'color', ran{i}, 'LineWidth',1.5)
+            plot([7 14 30 90 180], data(i,4:8), '-o', 'color', cols(i), 'LineWidth',1.5)
             title({'Fugl-Meyer scores of subject', num2str(i)})
             ylim([0 100])
             xlim([7 180])
@@ -570,9 +616,7 @@ end
             ylabel('Fugl-Meyer motor ability score', 'FontSize', 16)
             title(strcat('Subject ', num2str(i)))
             saveas(gcf, strcat(studydir, figuresdir,'fugl_meyer_scaled_space',num2str(i),'.png'));
-clf;
-
-          
+        clf;
 
         end
     end
@@ -590,7 +634,7 @@ clf;
             for i=1:23
                 ran{i}=rand(1,3)
                 ran2{i}=ran{i}/3
-                plot([7 14 30 90 180], data(i,9:2:17), '-o', 'color', ran{i}, 'LineWidth', 1.5)
+                plot([7 14 30 90 180], data(i,9:2:17), '-o', 'color', cols(i), 'LineWidth', 1.5)
                 hold on;
                 plot([7 14 30 90 180], data(i,10:2:18), '-o', 'color', ran2{i}, 'LineWidth', 1.5)
                 legend('Left', 'Right')
@@ -614,9 +658,106 @@ clf;
                 title({strcat('Subject ', num2str(i), ', stroke side =', lesionSide, ', handedness =', handedness)})
                 saveas(gcf, strcat(studydir, figuresdir,'grip_strength',num2str(i),'.png'));
            clf;
-            end
+        end
     end
 
-  %  elseif ismember(figs, 6)
+
+    if ismember( 8,figs)
+        fig1 = figure(1)
+        set(fig1, 'Position', [0 0 1300 1000]);
+
+        mask = getMask(masks{k});
+        mask = reshape(mask, [902629 1]);
+        intersect = GM_reshape.*logical(mask);
+        
+        thresh_lead = 1;
+        thresh_nemo = 0.1;
+        tst_l=[];
+        tst_n=[];
+        p_l=[];
+        p_n=[];
+        rec=[]
+        for i = 1:11 
+            lesion_nemo = read_avw(strcat(studydir, disconnectivitydir, 'SUB',num2str(i), '_voxeldisconnect_2mm.nii.gz'));
+            lesion_nemo =reshape(lesion_nemo,[902629 1]); %flattened 1D matrix that is <voxels>
+           % lesion_nemo = lesion_nemo.*intersect;
+
+            lesion_lead = read_avw(strcat(studydir, strokedir, 'SUB', num2str(i), '/lesionTract/HCP_MGH_32fold/', '/wc_SUB', num2str(i), '_lesionTract.nii.gz'));
+            lesion_lead = reshape(lesion_lead,[902629 1]); %flattened 1D matrix that is <voxels>
+          %  lesion_lead = lesion_lead.*intersect;
+
+            %load motor recovery scores (final - initial)
+            % column 4 = sesssion 1
+            % column 8 = sesssion 5
+            if i==6 % only 4 sessions (sessions 1, 2, 3, and 4)
+                recovery = df(i,7)-df(i,4);
+            else
+                recovery = df(i,8)-df(i,4);
+            end
+            rec(i)=recovery;
+
+            %LEAD z-scores
+            baseline_z_lead = SUBzscore{i}{1}(lesion_lead(GM_reshape)>thresh_lead);
+            if i==6
+                final_z_lead = SUBzscore{i}{4}(lesion_lead(GM_reshape)>thresh_lead);
+            else
+                final_z_lead = SUBzscore{i}{5}(lesion_lead(GM_reshape)>thresh_lead);
+            end
+            [h,p,ci,stats]=ttest2(final_z_lead,baseline_z_lead,'Vartype','unequal');
+            tst_l(i)=stats.tstat;
+            p_l(i)=p;
+
+            %NeMo2 z-scores
+            baseline_z_nemo = SUBzscore{i}{1}(lesion_nemo(GM_reshape)>thresh_nemo);
+            if i==6
+                final_z_nemo = SUBzscore{i}{4}(lesion_nemo(GM_reshape)>thresh_nemo);
+            else;
+                final_z_nemo = SUBzscore{i}{5}(lesion_nemo(GM_reshape)>thresh_nemo);
+            end
+            [h,p,ci,stats]=ttest2(final_z_nemo, baseline_z_nemo,'Vartype','unequal');
+            tst_n(i)=stats.tstat;
+            p_n(i)=p;
+        end
+        
+        
+        subplot(1, 2, 1)
+        scatter(tst_l,rec, 50, cols(1:11,:), 'filled', 'MarkerEdgeColor', 'b')
+        hold on;
+        b=polyfit(tst_l,rec,1);
+        a=polyval(b,tst_l)
+        plot(tst_l,a)
+        [rho,p]=corr(tst_l', rec', 'Type', 'Pearson')
+        pears_rho = rho
+        pears_p=p
+        xlabel('T-statistic: ICC Last followup vs. ICC Baseline', 'fontsize', 18)
+        ylabel('Last followup - Baseline Fugl-Meyer score', 'fontsize', 18)
+        title('LEAD-DBS')
+        ax = gca
+        ax.FontSize = 14
+        txt = ({strcat('Pearsons Correlation = ', num2str(pears_rho)), strcat('p = ',num2str(round(pears_p,4)))})
+        text(-20,70,txt, 'fontsize', 14)
+       
+        subplot(1, 2, 2)
+        scatter(tst_n,rec, 50, cols(1:11,:), 'filled', 'MarkerEdgeColor', 'b')
+        hold on;
+        b=polyfit(tst_n,rec,1);
+        a=polyval(b,tst_n)
+        plot(tst_n,a)
+        [rho,p]=corr(tst_n', rec', 'Type', 'Pearson')
+        pears_rho = rho
+        pears_p=p
+        xlabel('T-statistic: ICC Last followup vs. ICC Baseline', 'fontsize', 18)
+        ylabel('Last followup - Baseline Fugl-Meyer score', 'fontsize', 18)
+        title('NeMo 2.0')
+        ax = gca
+        ax.FontSize = 14
+       % xlim([-40 60])
+
+        txt = ({strcat('Pearsons Correlation = ', num2str(pears_rho)), strcat('p = ',num2str(round(pears_p,4)))})
+        text(-20,70,txt, 'fontsize', 14)
+
+        saveas(gcf, strcat(studydir, figuresdir, '/Figure8_correlation_allGM_changeICCvschangeFuglMeyer_baseline-vs-lastFU_NeMovsLEADDBS_11subs.png'))
+    end
+ %  elseif ismember(figs, 6)
   %  elseif ismember(figs, 7)
 end

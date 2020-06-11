@@ -2,7 +2,7 @@ clear all;
 
 addpath([getenv('FSLDIR') '/etc/matlab']);
 
-setenv( 'FSLDIR', '/usr/share/fsl/5.0/');
+setenv( 'FSLDIR', '/usr/share/fsl/5.0');
 fsldir = getenv('FSLDIR');
 fsldirmpath = sprintf('%s/etc/matlab',fsldir);
 path(path, fsldirmpath);
@@ -18,8 +18,8 @@ nsess=[5;5;5;5;5;4;5;5;5;5;5;3;5;5;5;5;5;5;5;2;5;5;5];
 
 studydir = '/home/emo4002/colossus_shared3/pons_sfmodelling/'
 resultsdir = 'results/ICC/'
-
-strokeptsCalculateICC(nscans, nsess, studydir, resultsdir, 'stroke_pts/')
+strokedir='stroke_pts/'
+strokeptsCalculateICC(nscans, nsess, studydir, resultsdir, strokedir)
 controlsCalculateICC(ones(1, 47)+1, nsess, studydir, resultsdir, 'control_subs/');
 
 calculateZScores(nscans, nsess,  studydir, resultsdir);
@@ -27,6 +27,6 @@ calculateZScores(nscans, nsess,  studydir, resultsdir);
 figuresdir = 'results/figures/';
 disconnectivitydir = 'processing/disconnectivity/numerator_output/';
 
-figs = [4];
+figs = [3];
 k=1; %1 = cortex, 3 = cerebellum
-[tst,rec,nvoxels]=makeFigures(nsess, studydir, figuresdir, resultsdir, disconnectivitydir, figs,k);
+[tst,rec,nvoxels]=makeFigures(nsess, studydir, strokedir, figuresdir, resultsdir, disconnectivitydir, figs,k);
