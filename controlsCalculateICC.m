@@ -11,7 +11,7 @@ function [] = controlsCalculateICC(nscans, nsess, studydir, resultsdir, controld
     %     SUB*_S*_ICC.nii.gz: 3D rendering of ICC values in 2mm MNI space (91x109x91 voxels) 
     %     ICC_GSR_cat.mat: the global signal regressed ICC values across all voxels in the gray matter in a cell array, where each cell contains the ICC values for each session saved separately.
 
-    clear all;
+    
 
     addpath([getenv('FSLDIR') '/etc/matlab']);
     setenv( 'FSLDIR', '/usr/share/fsl/5.0');
@@ -24,10 +24,10 @@ function [] = controlsCalculateICC(nscans, nsess, studydir, resultsdir, controld
     for i=24:47 %loop over controls subjects   
     
         % load GM mask for global signal regression.
-        GM=read_avw(strcat(studydir, '/c1referenceT1.nii'); 
+        GM=read_avw(strcat(studydir, '/c1referenceT1.nii')); 
         GM_reshape=reshape(GM, [902629 1]);
-        GM_reshape(GM_reshape > 0.25) = 1; %threshold GM mask
-        GM_reshape(GM_reshape <=0.25) = 0;
+        GM_reshape(GM_reshape > 0) = 1; %threshold GM mask
+        GM_reshape(GM_reshape ==0) = 0;
       
         cat_func=[]; %empty functional connectivity
         cat_outliers=[]; %empty outliers matrix
@@ -61,7 +61,7 @@ function [] = controlsCalculateICC(nscans, nsess, studydir, resultsdir, controld
         ICC_GSR_3D=[];
         for z=1:size(GM_reshape,1) %starts with the gray matter mask(which has all voxels in the 3d volume.)
             % makes gray matter voxels equal to their ICC value.
-            if GM(z)==1
+            if GM_reshape(z)==1
                 ICC_GSR(z)=ICC_GSR_cat_controls{i-23}(p); 
                 p=p+1;
             else
@@ -72,7 +72,7 @@ function [] = controlsCalculateICC(nscans, nsess, studydir, resultsdir, controld
         save_avw(ICC_GSR_3D,strcat(studydir, resultsdir, 'SUB',num2str(i), '_ICC'),'f',[2 2 2 2]);
     end
 
-    save(studydir, resultsdir, 'ICC_GSR_controlsubjects.mat','ICC_GSR_cat_controls')
+    save(strcat(studydir, resultsdir, 'ICC_GSR_controlsubjects.mat'),'ICC_GSR_cat_controls')
 
     %% Calculate mean and standard deviation of ICC across control subjects - from concatenated scans.
 

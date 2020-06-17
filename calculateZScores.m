@@ -15,7 +15,7 @@ function [] = calculateZScores(nscans, nsess, studydir, resultsdir)
     load(strcat(studydir, resultsdir, 'crtl_cat_GSR_mean.mat'), 'ctrl_cat_GSR_mean')
     load(strcat(studydir, resultsdir, 'crtl_cat_GSR_stdev.mat'), 'ctrl_cat_GSR_stdev')
 
-    SUBzscore=[];
+    SUBzscore={} ;
     for i=1:size(nscans, 2)
         for j=1:nsess(i)        
             % load mean and stddev of controls
@@ -32,8 +32,8 @@ function [] = calculateZScores(nscans, nsess, studydir, resultsdir)
             % reshape data to 3D
             GM = read_avw(strcat(studydir, 'c1referenceT1.nii'));
             GM_reshape = reshape(GM, [1 902629]);
-            GM_reshape(GM_reshape > 0.25) = 1; %threshold GM mask
-            GM_reshape(GM_reshape <=0.25) = 0;
+            GM_reshape(GM_reshape > 0) = 1; %threshold GM mask
+            GM_reshape(GM_reshape ==0) = 0;
             
             p=1; %counter
             zICC_GSR=[];
